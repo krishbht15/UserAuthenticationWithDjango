@@ -8,5 +8,5 @@ from django.urls import path
 
 
 urlpatterns = [
-    path('login/', views.signup)
+    path('login/', views.user)
 ]
