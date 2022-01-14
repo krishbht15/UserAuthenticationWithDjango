@@ -24,7 +24,7 @@ SECRET_KEY = '(@ypx(t1g%$9o80a=hf9w5-ybt53t^(4p(l0$g8k^0)qqb#ho1'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["localhost"]
 
 # Application definition
 CORS_ORIGIN_ALLOW_ALL = False
