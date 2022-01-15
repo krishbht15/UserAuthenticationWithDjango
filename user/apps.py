@@ -5,12 +5,10 @@ from user import util
 from user_auth.roles import Roles
 
 
-def my_callback(sender, **kwargs):
-    # Your specific logic here
+def addDefaultUser(sender, **kwargs):
     User = apps.get_model("user", "User")
     User(username="admin", email="admin@admin.com", password=util.encodePassword("admin"),
          role=Roles.SUPER_ADMIN).save()
-    pass
 
 
 class UserConfig(AppConfig):
@@ -18,5 +16,4 @@ class UserConfig(AppConfig):
     name = 'user'
 
     def ready(self):
-        post_migrate.connect(my_callback, sender=self)
-        print("ready")
+        post_migrate.connect(addDefaultUser, sender=self)

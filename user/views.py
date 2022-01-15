@@ -18,28 +18,25 @@ from .serializers import UserResponseSerializer
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 def user(request):
     user = security.authenticate_token(request)
-    if user is None:
-        raise exceptions.ObjectDoesNotExist("User doesn't exist")
+    if (user is None) | (user.count() == 0):
+        raise exceptions.ObjectDoesNotExist("Authentication error")
     if request.method == "GET":
-        print("dkjanbsjknsjk")
         return JsonResponse(UserResponseSerializer(user.first()).data, safe=False)
     elif request.method == "POST":
         if user.first().role != Roles.SUPER_ADMIN:
             raise exceptions.BadRequest("User not allowed")
-        print(request.data.get('username'))
         username = request.data.get('username')
         email = request.data.get('email')
-        password = util.encodePassword(request.data.get('password'))
+        password = request.data.get('password')
         role = request.data.get('role')
-        user = User(username=username, email=email, password=password, role=role)
-        # print(serial.data.get('username'))
-        print("dsakdsj  " + username)
-        print(user.id)
+        util.validateUser(email, username, password)
+        encryptedPassword = util.encodePassword(password)
+        if User.objects.filter(Q(username=username) | Q(email=email)).first() is not None:
+            raise Exception("Username or Email already exists")
+        user = User(username=username, email=email, password=encryptedPassword, role=role)
         user.jwt = security.generate_access_token(user)
         user.save()
         return JsonResponse({"response": user.jwt})
-    # elif request.method == "PUT":
-    #     print("dsda")
     elif request.method == "DELETE":
         if user.first().role != Roles.SUPER_ADMIN:
             raise exceptions.BadRequest("User not allowed")
@@ -51,19 +48,13 @@ def user(request):
 
 @api_view(['POST'])
 def login(request):
-    print("starting")
     if request.method == "POST":
-        print("post")
         email = request.data.get('email')
         password = request.data.get('password')
-        print(email)
-        print(password)
         encryptedPassword = util.encodePassword(password)
-        print(encryptedPassword)
         user = User.objects.filter(Q(email=email) & Q(password=encryptedPassword) & Q(deleted_at=None))
         if user.first() is None:
             raise exceptions.ObjectDoesNotExist("User doesn't exist")
-        print(user.first().deleted_at)
         jwt = security.generate_access_token(user.first())
         user.update(jwt=jwt)
         return JsonResponse({"token": jwt})
@@ -74,10 +65,30 @@ def login(request):
 def logout(request):
     if request.method == "GET":
         user = security.authenticate_token(request)
-        if user is None:
+        if (user is None) | (user.count() == 0):
             raise exceptions.ObjectDoesNotExist("User doesn't exist")
         isUpdated = user.update(jwt=None)
-        print(isUpdated)
         if isUpdated == 1: return JsonResponse({"message": "Logged Out Successfully"})
         return JsonResponse({"message": "Something went wrong"})
     raise exceptions.PermissionDenied("Resource Doesn't Exist")
+
+
+@api_view(['GET', 'POST', 'PUT', 'DELETE'])
+def accessResources(request):
+    user = security.authenticate_token(request)
+    if (user is None) | (user.count() == 0):
+        raise exceptions.ObjectDoesNotExist("User doesn't exist")
+    method = request.method
+    if method == "GET":
+        return JsonResponse({"message": "Read Successfully"})
+    elif method == "POST":
+        if user.first().role != Roles.SUPER_ADMIN:
+            raise exceptions.BadRequest("User not allowed to create.")
+        return JsonResponse({"message": "Created Successfully"})
+    elif method == "PUT":
+        if user.first().role == Roles.READ_ONLY: raise exceptions.BadRequest("User not allowed to create.")
+        return JsonResponse({"message": "Updated Successfully"})
+    elif method == "DELETE":
+        if user.first().role != Roles.SUPER_ADMIN: raise exceptions.BadRequest("User not allowed to create.")
+        return JsonResponse({"message": "Delete Successfully"})
+    return None

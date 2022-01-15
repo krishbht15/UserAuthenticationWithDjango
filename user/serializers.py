@@ -10,13 +10,3 @@ class UserResponseSerializer(serializers.ModelSerializer):
                   'email',
                   'password',
                   'role')
-
-
-class UserRequestSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ('id',
-                  'username',
-                  'email',
-                  'password',
-                  'role', 'jwt')
