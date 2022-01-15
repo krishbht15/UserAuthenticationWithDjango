@@ -8,5 +8,4 @@ class UserResponseSerializer(serializers.ModelSerializer):
         fields = ('id',
                   'username',
                   'email',
-                  'password',
                   'role')
